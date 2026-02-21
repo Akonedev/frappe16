@@ -1,2 +1,58 @@
-# compose/ai.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/ai.yml — IA locale: Ollama (LLM) + Open WebUI
+
+volumes:
+  ollama_data:
+    name: ${PREFIX}ollama_data
+  openwebui_data:
+    name: ${PREFIX}openwebui_data
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ${PREFIX}ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "127.0.0.1:${PORT_OLLAMA}:11434"
+    networks:
+      - default
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_ORIGINS: "*"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ${PREFIX}openwebui
+    restart: unless-stopped
+    volumes:
+      - openwebui_data:/app/backend/data
+    ports:
+      - "127.0.0.1:${PORT_OPENWEBUI}:8080"
+    networks:
+      - default
+    environment:
+      OLLAMA_BASE_URL: http://${PREFIX}ollama:11434
+      WEBUI_AUTH: "false"
+      ENABLE_SIGNUP: "true"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openwebui.rule=Host(`ai.${DOMAIN}`)"
+      - "traefik.http.routers.openwebui.entrypoints=websecure"
+      - "traefik.http.routers.openwebui.tls=true"
+      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
