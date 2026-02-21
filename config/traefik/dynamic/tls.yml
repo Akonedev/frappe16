@@ -1,0 +1,6 @@
+# config/traefik/dynamic/tls.yml — Options TLS pour dev local
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: false

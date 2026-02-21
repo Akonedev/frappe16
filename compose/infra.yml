@@ -14,6 +14,8 @@ volumes:
     name: ${PREFIX}mariadb_data
   redis_cache_data:
     name: ${PREFIX}redis_cache_data
+  traefik_certs:
+    name: ${PREFIX}traefik_certs
 
 services:
   mariadb:
@@ -71,3 +73,31 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  traefik:
+    image: traefik:v3
+    container_name: ${PREFIX}traefik
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PORT_HTTP}:80"
+      - "127.0.0.1:${PORT_HTTPS}:443"
+      - "127.0.0.1:${PORT_TRAEFIK_DASH}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ../config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_certs:/certs
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
