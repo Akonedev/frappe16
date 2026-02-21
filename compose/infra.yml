@@ -1,3 +1,73 @@
 # compose/infra.yml — Infrastructure: Traefik, MariaDB, Redis
-# TODO: à compléter Task 2
-services: {}
+# Réseau partagé presse_claude_network + services de base
+
+networks:
+  default:
+    name: ${PREFIX}network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+
+volumes:
+  mariadb_data:
+    name: ${PREFIX}mariadb_data
+  redis_cache_data:
+    name: ${PREFIX}redis_cache_data
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: ${PREFIX}mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MARIADB_PRESS_DB}
+      MYSQL_USER: ${MARIADB_PRESS_USER}
+      MYSQL_PASSWORD: ${MARIADB_PRESS_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:${PORT_MARIADB}:3306"
+    networks:
+      - default
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-character-set-client-handshake
+      --innodb-buffer-pool-size=256M
+      --max-connections=150
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: ${PREFIX}redis_cache
+    restart: unless-stopped
+    volumes:
+      - redis_cache_data:/data
+    ports:
+      - "127.0.0.1:${PORT_REDIS}:6379"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis-queue:
+    image: redis:7-alpine
+    container_name: ${PREFIX}redis_queue
+    restart: unless-stopped
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
