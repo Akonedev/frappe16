@@ -1,2 +1,50 @@
-# compose/press.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/press.yml — Frappe Press: Dashboard SaaS
+
+volumes:
+  press_bench:
+    name: ${PREFIX}press_bench
+  press_logs:
+    name: ${PREFIX}press_logs
+  press_ssh:
+    name: ${PREFIX}press_ssh
+
+services:
+  press:
+    build:
+      context: ../docker/press
+      dockerfile: Dockerfile
+    image: ${PREFIX}press:latest
+    container_name: ${PREFIX}press
+    restart: unless-stopped
+    volumes:
+      - press_bench:/home/frappe/frappe-bench
+      - press_logs:/home/frappe/frappe-bench/logs
+      - ../data/ssh:/home/frappe/.ssh:ro
+    ports:
+      - "127.0.0.1:14010:8000"
+    networks:
+      - default
+    environment:
+      SITE_NAME: ${PRESS_SITE_NAME}
+      ADMIN_PASSWORD: ${PRESS_ADMIN_PASSWORD}
+      ADMIN_EMAIL: ${PRESS_ADMIN_EMAIL}
+      DB_HOST: ${PREFIX}mariadb
+      DB_PORT: 3306
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.press.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.press.entrypoints=websecure"
+      - "traefik.http.routers.press.tls=true"
+      - "traefik.http.services.press.loadbalancer.server.port=8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-s", "http://localhost:8000/api/method/frappe.ping"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 300s
