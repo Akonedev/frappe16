@@ -1,2 +1,91 @@
-# compose/monitoring.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/monitoring.yml — Stack monitoring: Prometheus + Grafana + Loki
+
+volumes:
+  prometheus_data:
+    name: ${PREFIX}prometheus_data
+  grafana_data:
+    name: ${PREFIX}grafana_data
+  loki_data:
+    name: ${PREFIX}loki_data
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${PREFIX}prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:${PORT_PROMETHEUS}:9090"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  loki:
+    image: grafana/loki:latest
+    container_name: ${PREFIX}loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ../config/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:${PORT_LOKI}:3100"
+    networks:
+      - default
+    # Loki uses a distroless image (no wget/curl/sh available)
+    # Healthcheck via external curl probe on host port 14072
+    healthcheck:
+      test: ["CMD", "/usr/bin/loki", "-version"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${PREFIX}grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      GF_SERVER_ROOT_URL: https://monitor.${DOMAIN}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_INSTALL_PLUGINS: ""
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../config/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    ports:
+      - "127.0.0.1:${PORT_GRAFANA}:3000"
+    networks:
+      - default
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`monitor.${DOMAIN}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

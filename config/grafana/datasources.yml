@@ -1,0 +1,17 @@
+# config/grafana/datasources.yml — Sources de données Grafana
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://presse_claude_prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://presse_claude_loki:3100
+    editable: true

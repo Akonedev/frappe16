@@ -1,0 +1,29 @@
+# config/prometheus/prometheus.yml — Configuration Prometheus pour Presse Claude
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: presse_claude
+    env: dev
+
+scrape_configs:
+  # Prometheus lui-même
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Docker containers via cadvisor
+  - job_name: docker_containers
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Traefik métriques
+  - job_name: traefik
+    static_configs:
+      - targets: ['presse_claude_traefik:8080']
+
+  # MariaDB (si mysqld_exporter installé)
+  # - job_name: mariadb
+  #   static_configs:
+  #     - targets: ['mariadb_exporter:9104']
