@@ -1,0 +1,6 @@
+AllowUsers frappe
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+X11Forwarding no
+MaxAuthTries 3
+PrintMotd no

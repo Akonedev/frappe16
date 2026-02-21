@@ -1,2 +1,38 @@
-# compose/server.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/server.yml — Container "server" Ubuntu+SSH+Agent pour Frappe Press
+
+volumes:
+  server_home:
+    name: ${PREFIX}server_home
+  server_benches:
+    name: ${PREFIX}server_benches
+
+services:
+  server:
+    build:
+      context: ../docker/server
+      dockerfile: Dockerfile
+    image: ${PREFIX}server:latest
+    container_name: ${PREFIX}server
+    restart: unless-stopped
+    hostname: server.press.local
+    volumes:
+      - server_home:/home/frappe
+      - server_benches:/home/frappe/benches
+    ports:
+      - "127.0.0.1:${PORT_SERVER_SSH}:22"
+      - "127.0.0.1:${PORT_SERVER_AGENT}:8000"
+    networks:
+      - default
+    environment:
+      PRESS_PUBLIC_KEY: ${PRESS_PUBLIC_KEY:-}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ss -tlnp | grep ':22' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
