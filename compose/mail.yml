@@ -1,2 +1,33 @@
-# compose/mail.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/mail.yml — Stalwart Mail: serveur email self-hosted pour Presse Claude
+
+volumes:
+  stalwart_data:
+    name: ${PREFIX}stalwart_data
+
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:latest
+    container_name: ${PREFIX}stalwart
+    restart: unless-stopped
+    volumes:
+      - stalwart_data:/opt/stalwart
+    ports:
+      - "127.0.0.1:${PORT_STALWART_SMTP}:25"
+      - "127.0.0.1:${PORT_STALWART_IMAP}:993"
+      - "127.0.0.1:${PORT_STALWART_HTTP}:8080"
+    networks:
+      - default
+    environment:
+      TZ: Europe/Paris
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stalwart.rule=Host(`mail.${DOMAIN}`)"
+      - "traefik.http.routers.stalwart.entrypoints=websecure"
+      - "traefik.http.routers.stalwart.tls=true"
+      - "traefik.http.services.stalwart.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
