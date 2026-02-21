@@ -1,0 +1,13 @@
+# docker-compose.yml — Presse Claude: SaaS Platform locale sur Docker
+# Utilise la directive include: pour composer tous les modules
+# Toute la configuration se fait depuis .env
+
+include:
+  - compose/infra.yml
+  - compose/storage.yml
+  - compose/press.yml
+  - compose/server.yml
+  - compose/git.yml
+  - compose/mail.yml
+  - compose/monitoring.yml
+  - compose/ai.yml

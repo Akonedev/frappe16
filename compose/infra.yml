@@ -1,0 +1,3 @@
+# compose/infra.yml — Infrastructure: Traefik, MariaDB, Redis
+# TODO: à compléter Task 2
+services: {}
