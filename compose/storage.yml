@@ -1,2 +1,34 @@
-# compose/storage.yml — TODO: à compléter dans les tâches suivantes
-services: {}
+# compose/storage.yml — Garage S3: stockage objet local (remplace MinIO/AWS S3)
+
+volumes:
+  garage_data:
+    name: ${PREFIX}garage_data
+  garage_meta:
+    name: ${PREFIX}garage_meta
+
+services:
+  garage:
+    image: dxflrs/garage:v1.0.0
+    container_name: ${PREFIX}garage
+    restart: unless-stopped
+    volumes:
+      - ../config/garage/garage.toml:/etc/garage.toml:ro
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+    ports:
+      - "127.0.0.1:${PORT_GARAGE_S3}:3900"
+      - "127.0.0.1:${PORT_GARAGE_WEB}:3902"
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.garage-s3.rule=Host(`s3.${DOMAIN}`)"
+      - "traefik.http.routers.garage-s3.entrypoints=websecure"
+      - "traefik.http.routers.garage-s3.tls=true"
+      - "traefik.http.services.garage-s3.loadbalancer.server.port=3900"
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
