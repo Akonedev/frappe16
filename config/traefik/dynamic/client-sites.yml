@@ -1,0 +1,50 @@
+# config/traefik/dynamic/client-sites.yml
+# Routes Traefik pour les sites clients Frappe gérés par Press
+# Ce fichier est rechargé automatiquement (watch: true)
+# Ajouter une entrée par site client créé
+
+http:
+  routers:
+    # Route wildcard pour tous les sous-domaines *.press.local → nginx du server container
+    client-sites:
+      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.press.local`)"
+      entryPoints:
+        - websecure
+      service: frappe-server
+      tls: {}
+      priority: 1
+
+    # Route spécifique pour demosite.press.local (exemple)
+    demosite:
+      rule: "Host(`demosite.press.local`)"
+      entryPoints:
+        - websecure
+      service: frappe-server
+      tls: {}
+      priority: 10
+
+    # Route press.local → nginx du container press (priorité max pour éviter capture par wildcard)
+    press-admin:
+      rule: "Host(`press.local`)"
+      entryPoints:
+        - websecure
+      service: press-admin-nginx
+      tls: {}
+      priority: 100
+
+  services:
+    # Service backend : nginx dans le container server (port 80)
+    # Nginx sert les assets statiques directement et proxifie vers gunicorn (8001)
+    frappe-server:
+      loadBalancer:
+        servers:
+          - url: "http://172.30.0.6:80"
+        passHostHeader: true
+
+    # Service press admin : nginx dans le container press (port 80)
+    # Nginx sert les assets statiques et proxifie vers gunicorn press (8000)
+    press-admin-nginx:
+      loadBalancer:
+        servers:
+          - url: "http://172.30.0.9:80"
+        passHostHeader: true

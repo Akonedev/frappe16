@@ -1,6 +1,6 @@
 # Makefile — Presse Claude: commandes rapides
 .PHONY: install start stop restart logs status clean \
-        press-shell server-shell setup-press register-server dns dns-remove
+        press-shell server-shell setup-press register-server dns dns-remove webhooks
 
 ENV=--env-file .env
 
@@ -33,6 +33,9 @@ setup-press:
 
 register-server:
 	./scripts/register-server.sh
+
+webhooks:
+	./scripts/setup_forgejo_webhooks.sh
 
 dns:
 	./scripts/dns-setup.sh

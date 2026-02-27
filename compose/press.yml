@@ -1,12 +1,10 @@
 # compose/press.yml — Frappe Press: Dashboard SaaS
+# NOTE volumes: montage sur /home/frappe (parent), pas /home/frappe/frappe-bench
+# Docker copie l'image dans le volume → bench init peut créer le sous-répertoire
 
 volumes:
-  press_bench:
-    name: ${PREFIX}press_bench
-  press_logs:
-    name: ${PREFIX}press_logs
-  press_ssh:
-    name: ${PREFIX}press_ssh
+  press_home:
+    name: ${PREFIX}press_home
 
 services:
   press:
@@ -17,11 +15,11 @@ services:
     container_name: ${PREFIX}press
     restart: unless-stopped
     volumes:
-      - press_bench:/home/frappe/frappe-bench
-      - press_logs:/home/frappe/frappe-bench/logs
+      - press_home:/home/frappe
       - ../data/ssh:/home/frappe/.ssh:ro
+      - ../apps/press_patches:/home/frappe/press_patches:ro
     ports:
-      - "127.0.0.1:14010:8000"
+      - "127.0.0.1:${PORT_PRESS}:8000"
     networks:
       - default
     environment:
@@ -31,6 +29,8 @@ services:
       DB_HOST: ${PREFIX}mariadb
       DB_PORT: 3306
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      REDIS_CACHE_URL: redis://${PREFIX}redis_cache:6379
+      REDIS_QUEUE_URL: redis://${PREFIX}redis_queue:6379
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.press.rule=Host(`${DOMAIN}`)"
@@ -43,7 +43,7 @@ services:
       redis-cache:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "-s", "http://localhost:8000/api/method/frappe.ping"]
+      test: ["CMD", "curl", "-f", "-s", "http://localhost:8000/api/method/ping"]
       interval: 30s
       timeout: 15s
       retries: 10

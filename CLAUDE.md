@@ -22,6 +22,7 @@ make setup-press     # Configurer Press Settings après démarrage
 make register-server # Enregistrer server container dans Press
 make dns             # Ajouter *.press.local dans /etc/hosts
 make dns-remove      # Supprimer les entrées DNS
+make webhooks        # Configurer webhooks Forgejo → Press (14 repos)
 make clean           # Tout arrêter et supprimer les données
 ```
 
@@ -86,3 +87,51 @@ Infra:
 | Branch Press | master | Pas de branche version-16 dans Press |
 | DB sites | MariaDB 10.6 | Seule option supportée par Press |
 | Garage keys | Format GKxxxx | Généré par Garage (pas configurable) |
+| Press Dashboard | Vue SPA buildé | Build host → `apps/press/press/www/dashboard.html` |
+| App Sources | Forgejo (git.press.local) | 14 apps mirrorées depuis GitHub |
+
+## Press Dashboard (Vue SPA)
+
+Le dashboard `/dashboard` est une Vue SPA qui doit être **buildée** avant utilisation.
+
+**Rebuild du dashboard (si modifié):**
+```bash
+# Sur le HOST (240G libres), pas dans le container (disque plein)
+mkdir -p /tmp/fake_bench/apps/press /tmp/fake_bench/sites
+docker cp presse_claude_press:/home/frappe/frappe-bench/apps/press/dashboard/. /tmp/fake_bench/apps/press/dashboard/
+echo '{"socketio_port":9000}' > /tmp/fake_bench/sites/common_site_config.json
+(cd /tmp/fake_bench/apps/press/dashboard && yarn install && yarn run build)
+# Copier les résultats dans le container
+docker cp /tmp/fake_bench/apps/press/press/www/dashboard.html \
+  presse_claude_press:/home/frappe/frappe-bench/apps/press/press/www/dashboard.html
+docker cp /tmp/fake_bench/apps/press/press/public/dashboard/. \
+  presse_claude_press:/home/frappe/frappe-bench/sites/assets/press/dashboard/
+```
+
+## Apps Frappe (Task 16)
+
+14 App Sources configurés dans Press, tous pointant vers Forgejo local:
+- **Starter** (gratuit): frappe, crm, helpdesk, lms, wiki, gameplan, builder, print_designer, payments
+- **Pro** ($25/mo): + erpnext, hrms, drive, raven
+- **Enterprise** ($99/mo): + insights
+
+**Forgejo mirrors** (sync auto depuis GitHub):
+```bash
+http://git.press.local/frappe/<app_name>   # frappe, erpnext, hrms, crm, helpdesk, lms...
+http://git.press.local/The-Commit-Company/raven
+```
+
+**Sync manuel des mirrors:**
+```bash
+./scripts/sync_apps_to_forgejo.sh [app_name]  # sync une app ou toutes
+```
+
+## Accès
+
+| URL | Service | Login |
+|---|---|---|
+| `https://press.local:14002/desk` | Press Admin Desk | Administrator / presse_admin_2024 |
+| `https://press.local:14002/dashboard` | Press Vue Dashboard | même |
+| `https://git.press.local:14002` | Forgejo | gitadmin / presse_admin_2024 |
+| `https://monitor.press.local:14002` | Grafana | admin / admin |
+| `https://ai.press.local:14002` | Open WebUI | — |
