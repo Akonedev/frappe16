@@ -22,7 +22,8 @@ make setup-press     # Configurer Press Settings après démarrage
 make register-server # Enregistrer server container dans Press
 make dns             # Ajouter *.press.local dans /etc/hosts
 make dns-remove      # Supprimer les entrées DNS
-make webhooks        # Configurer webhooks Forgejo → Press (14 repos)
+make webhooks        # Configurer webhooks Forgejo → Press (23 repos)
+make mkcert          # Générer certificats TLS locaux de confiance (mkcert)
 make clean           # Tout arrêter et supprimer les données
 ```
 
@@ -88,7 +89,8 @@ Infra:
 | DB sites | MariaDB 10.6 | Seule option supportée par Press |
 | Garage keys | Format GKxxxx | Généré par Garage (pas configurable) |
 | Press Dashboard | Vue SPA buildé | Build host → `apps/press/press/www/dashboard.html` |
-| App Sources | Forgejo (git.press.local) | 22 apps mirrorées depuis GitHub |
+| App Sources | Forgejo (git.press.local) | 23 apps mirrorées depuis GitHub |
+| TLS local | mkcert (scripts/setup-mkcert.sh) | Certs de confiance *.press.local |
 
 ## Press Dashboard (Vue SPA)
 
@@ -108,25 +110,40 @@ docker cp /tmp/fake_bench/apps/press/press/public/dashboard/. \
   presse_claude_press:/home/frappe/frappe-bench/sites/assets/press/dashboard/
 ```
 
-## Apps Frappe (Tasks 16 + 22 + 24-26)
+## Apps Frappe (Tasks 16 + 22 + 24-29)
 
-22 App Sources configurés dans Press (22 apps dans le bench), tous pointant vers Forgejo local:
+23 App Sources configurés dans Press (23 apps dans le bench), tous pointant vers Forgejo local:
 - **Starter** (gratuit): frappe, crm, helpdesk, lms, wiki, gameplan, builder, print_designer, payments
 - **Pro** ($25/mo): + erpnext, hrms, drive, raven
 - **Enterprise** ($99/mo): + insights
 - **Mail** (Task 22): + mail (branch develop, requiert Python ≥3.14 — non installable avec Python 3.12)
 - **Phase 4** (Tasks 24-26): education, hospitality, lending, non_profit, webshop, meeting, llm
+- **Phase 5** (Task 29): + frappe_whatsapp (community, branch master)
 
 **Forgejo mirrors** (sync auto depuis GitHub):
 ```bash
-http://git.press.local/frappe/<app_name>   # toutes les 22 apps
+http://git.press.local/frappe/<app_name>   # toutes les 23 apps
 http://git.press.local/The-Commit-Company/raven
 ```
 
-**Apps bench server** (22 total):
-builder, crm, drive, education, erpnext, frappe, gameplan, helpdesk, hospitality,
-hrms, insights, lending, llm, lms, mail, meeting, non_profit, payments,
-print_designer, raven, webshop, wiki
+**Apps bench server** (23 total):
+builder, crm, drive, education, erpnext, frappe, frappe_whatsapp, gameplan,
+helpdesk, hospitality, hrms, insights, lending, llm, lms, mail, meeting,
+non_profit, payments, print_designer, raven, webshop, wiki
+
+## TLS local (Task 27)
+
+Certificats mkcert générés pour `*.press.local` — valides jusqu'à 2028:
+- `config/traefik/certs/press.local.crt` / `.key` (chargés par Traefik)
+- CA: `config/traefik/certs/ca/rootCA.pem` (à importer dans navigateur)
+- Régénération: `make mkcert`
+
+## Backup S3 (Task 28)
+
+Press configuré pour sauvegarder vers Garage (S3-compatible):
+- Bucket backups: `press-backups` (Garage endpoint: `http://presse_claude_garage:3900`)
+- Bucket uploads: `press-uploads`
+- Credentials dans `.env`: `GARAGE_ACCESS_KEY`, `GARAGE_SECRET_KEY`
 
 ## Routing Traefik (Task 23)
 

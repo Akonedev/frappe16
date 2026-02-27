@@ -14,8 +14,6 @@ volumes:
     name: ${PREFIX}mariadb_data
   redis_cache_data:
     name: ${PREFIX}redis_cache_data
-  traefik_certs:
-    name: ${PREFIX}traefik_certs
 
 services:
   mariadb:
@@ -86,7 +84,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ../config/traefik/dynamic:/etc/traefik/dynamic:ro
-      - traefik_certs:/certs
+      - ../config/traefik/certs:/certs:ro
     networks:
       - default
     labels:

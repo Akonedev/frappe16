@@ -35,6 +35,8 @@ declare -A APPS_GITHUB=(
     ["webshop"]="https://github.com/frappe/webshop develop frappe"
     ["meeting"]="https://github.com/frappe/meeting master frappe"
     ["llm"]="https://github.com/frappe/llm develop frappe"
+    # Phase 5 — Community apps
+    ["frappe_whatsapp"]="https://github.com/shridarpatil/frappe_whatsapp master frappe"
 )
 
 TARGET="${1:-}"  # Optional: sync only this app

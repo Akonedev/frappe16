@@ -1,6 +1,11 @@
 # config/traefik/dynamic/tls.yml — Options TLS pour dev local
+# Certificats mkcert générés par scripts/setup-mkcert.sh
 tls:
   options:
     default:
       minVersion: VersionTLS12
       sniStrict: false
+
+  certificates:
+    - certFile: /certs/press.local.crt
+      keyFile: /certs/press.local.key
