@@ -27,6 +27,14 @@ declare -A APPS_GITHUB=(
     ["payments"]="https://github.com/frappe/payments main frappe"
     ["raven"]="https://github.com/The-Commit-Company/raven main The-Commit-Company"
     ["mail"]="https://github.com/frappe/mail develop frappe"
+    # Phase 4 — Apps sectorielles
+    ["education"]="https://github.com/frappe/education develop frappe"
+    ["hospitality"]="https://github.com/frappe/hospitality develop frappe"
+    ["lending"]="https://github.com/frappe/lending develop frappe"
+    ["non_profit"]="https://github.com/frappe/non_profit develop frappe"
+    ["webshop"]="https://github.com/frappe/webshop develop frappe"
+    ["meeting"]="https://github.com/frappe/meeting master frappe"
+    ["llm"]="https://github.com/frappe/llm develop frappe"
 )
 
 TARGET="${1:-}"  # Optional: sync only this app

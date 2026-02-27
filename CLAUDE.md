@@ -88,7 +88,7 @@ Infra:
 | DB sites | MariaDB 10.6 | Seule option supportée par Press |
 | Garage keys | Format GKxxxx | Généré par Garage (pas configurable) |
 | Press Dashboard | Vue SPA buildé | Build host → `apps/press/press/www/dashboard.html` |
-| App Sources | Forgejo (git.press.local) | 14 apps mirrorées depuis GitHub |
+| App Sources | Forgejo (git.press.local) | 22 apps mirrorées depuis GitHub |
 
 ## Press Dashboard (Vue SPA)
 
@@ -108,20 +108,25 @@ docker cp /tmp/fake_bench/apps/press/press/public/dashboard/. \
   presse_claude_press:/home/frappe/frappe-bench/sites/assets/press/dashboard/
 ```
 
-## Apps Frappe (Task 16 + 22)
+## Apps Frappe (Tasks 16 + 22 + 24-26)
 
-15 App Sources configurés dans Press, tous pointant vers Forgejo local:
+22 App Sources configurés dans Press (22 apps dans le bench), tous pointant vers Forgejo local:
 - **Starter** (gratuit): frappe, crm, helpdesk, lms, wiki, gameplan, builder, print_designer, payments
 - **Pro** ($25/mo): + erpnext, hrms, drive, raven
 - **Enterprise** ($99/mo): + insights
 - **Mail** (Task 22): + mail (branch develop, requiert Python ≥3.14 — non installable avec Python 3.12)
+- **Phase 4** (Tasks 24-26): education, hospitality, lending, non_profit, webshop, meeting, llm
 
 **Forgejo mirrors** (sync auto depuis GitHub):
 ```bash
-http://git.press.local/frappe/<app_name>   # frappe, erpnext, hrms, crm, helpdesk, lms...
+http://git.press.local/frappe/<app_name>   # toutes les 22 apps
 http://git.press.local/The-Commit-Company/raven
-http://git.press.local/frappe/mail         # branch: develop
 ```
+
+**Apps bench server** (22 total):
+builder, crm, drive, education, erpnext, frappe, gameplan, helpdesk, hospitality,
+hrms, insights, lending, llm, lms, mail, meeting, non_profit, payments,
+print_designer, raven, webshop, wiki
 
 ## Routing Traefik (Task 23)
 
