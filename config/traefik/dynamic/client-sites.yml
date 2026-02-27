@@ -6,22 +6,14 @@
 http:
   routers:
     # Route wildcard pour tous les sous-domaines *.press.local → nginx du server container
+    # Traefik v3 supporte le wildcard Host nativement
     client-sites:
-      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.press.local`)"
+      rule: "HostRegexp(`^[a-z0-9-]+\\.press\\.local$`)"
       entryPoints:
         - websecure
       service: frappe-server
       tls: {}
       priority: 1
-
-    # Route spécifique pour demosite.press.local (exemple)
-    demosite:
-      rule: "Host(`demosite.press.local`)"
-      entryPoints:
-        - websecure
-      service: frappe-server
-      tls: {}
-      priority: 10
 
     # Route press.local → nginx du container press (priorité max pour éviter capture par wildcard)
     press-admin:
@@ -38,13 +30,12 @@ http:
     frappe-server:
       loadBalancer:
         servers:
-          - url: "http://172.30.0.6:80"
+          - url: "http://presse_claude_server:80"
         passHostHeader: true
 
-    # Service press admin : nginx dans le container press (port 80)
-    # Nginx sert les assets statiques et proxifie vers gunicorn press (8000)
+    # Service press admin : gunicorn dans le container press (port 8000)
     press-admin-nginx:
       loadBalancer:
         servers:
-          - url: "http://172.30.0.9:80"
+          - url: "http://presse_claude_press:8000"
         passHostHeader: true

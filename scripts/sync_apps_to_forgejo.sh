@@ -26,6 +26,7 @@ declare -A APPS_GITHUB=(
     ["print_designer"]="https://github.com/frappe/print_designer version-1 frappe"
     ["payments"]="https://github.com/frappe/payments main frappe"
     ["raven"]="https://github.com/The-Commit-Company/raven main The-Commit-Company"
+    ["mail"]="https://github.com/frappe/mail develop frappe"
 )
 
 TARGET="${1:-}"  # Optional: sync only this app

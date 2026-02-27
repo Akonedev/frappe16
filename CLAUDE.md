@@ -108,18 +108,39 @@ docker cp /tmp/fake_bench/apps/press/press/public/dashboard/. \
   presse_claude_press:/home/frappe/frappe-bench/sites/assets/press/dashboard/
 ```
 
-## Apps Frappe (Task 16)
+## Apps Frappe (Task 16 + 22)
 
-14 App Sources configurés dans Press, tous pointant vers Forgejo local:
+15 App Sources configurés dans Press, tous pointant vers Forgejo local:
 - **Starter** (gratuit): frappe, crm, helpdesk, lms, wiki, gameplan, builder, print_designer, payments
 - **Pro** ($25/mo): + erpnext, hrms, drive, raven
 - **Enterprise** ($99/mo): + insights
+- **Mail** (Task 22): + mail (branch develop, requiert Python ≥3.14 — non installable avec Python 3.12)
 
 **Forgejo mirrors** (sync auto depuis GitHub):
 ```bash
 http://git.press.local/frappe/<app_name>   # frappe, erpnext, hrms, crm, helpdesk, lms...
 http://git.press.local/The-Commit-Company/raven
+http://git.press.local/frappe/mail         # branch: develop
 ```
+
+## Routing Traefik (Task 23)
+
+- `*.press.local` → `presse_claude_server:80` (nginx bench, wildcard regex Traefik v3)
+- `press.local` → `presse_claude_press:8000` (Press dashboard)
+- Config: `config/traefik/dynamic/client-sites.yml`
+- **IPs dynamiques** — utiliser les noms de containers Docker (pas d'IPs hardcodées)
+
+**Déploiement site E2E validé (Task 23):**
+```
+testsite.press.local → frappe + crm installés, agent job Success, HTTP 200
+demosite.press.local → Active, HTTP 200
+client1.press.local  → Active, HTTP 200
+```
+
+**Agent Press↔Server:**
+- `local_agent_http: true` dans `press.local/site_config.json`
+- Agent URL: `http://presse_claude_server:8000/`
+- Circuit breaker: si `Agent Request Failure` bloque, supprimer en DB et reset `next_retry_at`
 
 **Sync manuel des mirrors:**
 ```bash

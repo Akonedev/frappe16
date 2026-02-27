@@ -36,6 +36,7 @@ REPOS=(
   "frappe/drive"
   "frappe/insights"
   "The-Commit-Company/raven"
+  "frappe/mail"
 )
 
 created=0
